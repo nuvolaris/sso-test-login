@@ -62,6 +62,10 @@ export function getAdminApiBase() {
     return "http://amd.n7s.co";
   }
 
+  if (hostname.endsWith(".miniops.me")) {
+    return `${protocol}//miniops.me`;
+  }
+
   const parts = hostname.split(".");
   if (parts.length > 3) {
     return `${protocol}//${parts.slice(1).join(".")}`;
@@ -77,6 +81,10 @@ export function getRequestedWorkspaceNamespace() {
     return null;
   }
 
+  if (hostname.endsWith(".miniops.me")) {
+    return hostname.slice(0, -".miniops.me".length) || null;
+  }
+
   const parts = hostname.split(".");
   if (parts.length <= 3) {
     return null;
@@ -86,13 +94,14 @@ export function getRequestedWorkspaceNamespace() {
 }
 
 export async function startDeviceAuthorization() {
-  const response = await fetch(`${getAdminApiBase()}/system/api/v1/auth/oidc/device/start`, {
+  const endpoint = `${getAdminApiBase()}/system/api/v1/auth/oidc/device/start`;
+  const response = await fetchJson(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "{}",
   });
 
-  const payload = await response.json();
+  const payload = response.payload;
   if (!response.ok) {
     throw new Error(payload.message || "Unable to start SSO login");
   }
@@ -107,14 +116,15 @@ export async function pollForSession(device: DeviceAuthorization, signal?: Abort
   while (Date.now() < expiresAt) {
     await sleep(intervalMs, signal);
 
-    const response = await fetch(`${getAdminApiBase()}/system/api/v1/auth/oidc/device/poll`, {
+    const endpoint = `${getAdminApiBase()}/system/api/v1/auth/oidc/device/poll`;
+    const response = await fetchJson(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ flow_id: device.flow_id }),
       signal,
     });
 
-    const payload = (await response.json()) as PollResponse;
+    const payload = response.payload as PollResponse;
     if (response.status === 202 || payload.status === "pending") {
       continue;
     }
@@ -135,6 +145,26 @@ export async function pollForSession(device: DeviceAuthorization, signal?: Abort
   }
 
   throw new Error("SSO login expired");
+}
+
+async function fetchJson(endpoint: string, init: RequestInit) {
+  let response: Response;
+  try {
+    response = await fetch(endpoint, init);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "request failed";
+    throw new Error(`Unable to reach OpenServerless SSO endpoint ${endpoint}: ${message}`);
+  }
+
+  try {
+    return {
+      ok: response.ok,
+      status: response.status,
+      payload: await response.json(),
+    };
+  } catch {
+    throw new Error(`OpenServerless SSO endpoint ${endpoint} did not return JSON (${response.status})`);
+  }
 }
 
 function sleep(ms: number, signal?: AbortSignal) {
