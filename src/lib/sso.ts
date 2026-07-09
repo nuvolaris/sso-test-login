@@ -51,6 +51,11 @@ export function clearSession() {
 }
 
 export function getAdminApiBase() {
+  const configuredBase = import.meta.env.VITE_ADMIN_API_BASE?.trim();
+  if (configuredBase) {
+    return configuredBase.replace(/\/+$/, "");
+  }
+
   const { protocol, hostname, origin } = window.location;
 
   if (hostname === "localhost" || hostname === "127.0.0.1") {

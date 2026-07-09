@@ -23,12 +23,13 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
     abortRef.current?.abort();
     const abort = new AbortController();
     abortRef.current = abort;
-    const loginWindow = openLoginWindow();
-    popupRef.current = loginWindow;
     setError("");
     setStatus("waiting");
 
     try {
+      const loginWindow = openLoginWindow();
+      popupRef.current = loginWindow;
+
       const device = await startDeviceAuthorization();
       setDevice(device);
 
@@ -159,7 +160,7 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
 export default LoginPage;
 
 function openLoginWindow() {
-  const popup = window.open("", "trureact-sso", "popup,width=520,height=720");
+  const popup = window.open("about:blank", "trureact_sso", "width=520,height=720");
   if (!popup) return null;
 
   popup.document.title = "Trustable SSO";
