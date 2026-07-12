@@ -1,4 +1,4 @@
-const SESSION_KEY = "trureact.sso.session";
+const SESSION_KEY = "nuvolaris.sso-test-login.session";
 
 export type SsoSession = {
   login: string;

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Trustable Workspace is a React frontend. The frontend uses Vite, TypeScript, TailwindCSS, and shadcn/ui components.
+Leonardo PSN SSO Test Login is a React frontend. The frontend uses Vite, TypeScript, TailwindCSS, and shadcn/ui components.
 
 ## Commands
 
