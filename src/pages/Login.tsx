@@ -1,9 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ShieldCheck, LogIn, ExternalLink, Loader2, RotateCcw, Network, CloudCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ProviderLogout from "@/components/ProviderLogout";
 import {
   type DeviceAuthorization,
   type SsoSession,
+  getAdminApiBase,
   pollForSession,
   startDeviceAuthorization,
 } from "@/lib/sso";
@@ -19,18 +21,25 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
   const abortRef = useRef<AbortController | null>(null);
   const popupRef = useRef<Window | null>(null);
 
+  useEffect(() => () => {
+    abortRef.current?.abort();
+    popupRef.current?.close();
+  }, []);
+
   async function beginLogin() {
     abortRef.current?.abort();
     const abort = new AbortController();
     abortRef.current = abort;
     setError("");
+    setDevice(null);
     setStatus("waiting");
 
     try {
       const loginWindow = openLoginWindow();
       popupRef.current = loginWindow;
 
-      const device = await startDeviceAuthorization();
+      const device = await startDeviceAuthorization(abort.signal);
+      if (abort.signal.aborted || abortRef.current !== abort) return;
       setDevice(device);
 
       const verificationUrl = device.verification_uri_complete || device.verification_uri;
@@ -39,10 +48,12 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
       }
 
       const session = await pollForSession(device, abort.signal);
+      if (abort.signal.aborted || abortRef.current !== abort) return;
       setStatus("verifying");
       onAuthenticated(session);
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (abort.signal.aborted || abortRef.current !== abort) return;
+      popupRef.current?.close();
       setStatus("idle");
       setError(err instanceof Error ? err.message : "SSO login failed");
     }
@@ -50,6 +61,7 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
 
   function resetLogin() {
     abortRef.current?.abort();
+    abortRef.current = null;
     popupRef.current?.close();
     popupRef.current = null;
     setDevice(null);
@@ -98,17 +110,18 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
 
           <div className="border border-white/20 bg-white p-6 shadow-[16px_16px_0_rgba(29,164,216,0.3)] md:p-8">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-5 border-b border-slate-200 pb-6">
-              <div className="flex items-center gap-5">
-                <img src="/leonardo-logo.svg" alt="Leonardo" className="h-8 w-auto" />
+              <div className="flex w-full min-w-0 items-center gap-3 sm:gap-5">
+                <img src="/leonardo-logo.svg" alt="Leonardo" className="h-8 w-[42%] max-w-[180px] object-contain" />
                 <div className="h-8 w-px bg-slate-200" />
-                <img src="/nuvolaris-logo.png" alt="Nuvolaris" className="h-8 w-auto" />
+                <img src="/nuvolaris-logo.png" alt="Nuvolaris" className="h-8 w-[42%] max-w-[180px] object-contain" />
               </div>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase text-emerald-900">
-                SSO attivo
+                Test SSO
               </span>
             </div>
 
             <div className="space-y-5">
+              <p className="break-all text-xs text-slate-500">Backend: {getAdminApiBase() || "proxy locale verso PSN"}</p>
               <div>
                 <h2 className="text-2xl font-black">Accedi all'ambiente di test</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -143,7 +156,7 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
               ) : null}
 
               {error ? (
-                <div className="border border-red-900 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">{error}</div>
+                <div role="alert" className="border border-red-900 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">{error}</div>
               ) : null}
 
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -166,6 +179,7 @@ const LoginPage = ({ onAuthenticated }: LoginPageProps) => {
                   </Button>
                 ) : null}
               </div>
+              <ProviderLogout onReset={resetLogin} />
             </div>
           </div>
         </section>

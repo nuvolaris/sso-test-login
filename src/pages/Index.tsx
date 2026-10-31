@@ -1,6 +1,7 @@
 import { CheckCircle2, CloudCog, KeyRound, LogOut, Network, Server, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import ProviderLogout from "@/components/ProviderLogout";
 import type { SsoSession } from "@/lib/sso";
 
 type IndexProps = {
@@ -23,13 +24,14 @@ const Index = ({ session, onLogout }: IndexProps) => {
           </div>
           <Button onClick={onLogout} variant="outline" className="rounded-none border-slate-900">
             <LogOut className="h-4 w-4" />
-            Esci
+            Esci dal test
           </Button>
         </div>
       </header>
 
       <main className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <section className="space-y-7">
+          <ProviderLogout onReset={onLogout} />
           <div className="inline-flex items-center gap-3 border border-emerald-700 bg-emerald-50 px-4 py-2 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-900 shadow-[6px_6px_0_#064e3b]">
             <ShieldCheck className="h-4 w-4" />
             Accesso SSO verificato
@@ -40,7 +42,7 @@ const Index = ({ session, onLogout }: IndexProps) => {
               Benvenuto nel progetto Leonardo – PSN
             </h1>
             <p className="max-w-xl text-lg leading-8 text-slate-700">
-              La sessione federata è attiva. Il bridge SSO ha verificato l'identità e risolto il namespace
+              Il backend ha confermato l'accesso federato. Il bridge SSO ha verificato l'identità e risolto il namespace
               OpenServerless assegnato all'utente.
             </p>
           </div>

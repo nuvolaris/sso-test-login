@@ -29,6 +29,7 @@ __pycache__/
 *.zip
 .env
 .env.*
+!.env.example
 app/.venv
 opencode.json
 opencode.md
